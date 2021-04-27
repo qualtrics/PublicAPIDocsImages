@@ -1,0 +1,1977 @@
+{
+  "x-sap-api-type": "REST",
+  "x-sap-shortText": "Create and Manage Contacts",
+  "x-sap-stateInfo": {
+    "state": "Active"
+  },
+  "openapi": "3.0.0",
+  "tags": [
+    {
+      "name": "Directory Contacts",
+      "description": ""
+    },
+    {
+      "name": "Directory Contacts History",
+      "description": ""
+    },
+    {
+      "name": "Request Schemas",
+      "description": ""
+    },
+    {
+      "name": "Responses Schemas",
+      "description": ""
+    },
+    {
+      "name": "Parameters",
+      "description": ""
+    }
+  ],
+  "info": {
+    "title": "Contacts",
+    "description": "The Contacts API allows you to create and manage the contacts to whom you will send your surveys. \n\n## Workflows\n- [Create Contact](#create-contact)\n- [List Contacts](#list-contacts)\n- [Get Contact](#get-contact)\n- [Get Contact History](#get-contact-history)\n- [Update Contact](#update-contact)\n- [Delete Contact](#delete-contact)\n\n<!--theme: warning-->\n> ### Code and Qualtrics Support\n>Our support team does not offer assistance or consultation on custom coding, but you can always try asking our [community of dedicated users](https://www.qualtrics.com/community/). If you’d like to know more about our custom coding services you can commission, please contact your [Qualtrics Account Executive](https://www.qualtrics.com/support/survey-platform/getting-started/help-and-feedback/#AEsandCSMs).\n\n<!-- theme: warning -->\n>### XM Directory Only\n>These APIs are only available to XM Directory users.\n\n## Create Contact\n\nThe Create Contact API allows you to create new contacts in the XM Directory directory. Contacts are made up of at least the standard contact data of first name, last name, email address, phone number and language. In addition to these basic fields, you can include data from your internal systems to help you identify and manage your contacts more easily. \n\nIn the `extRef` field, you can add an ID from your internal systems, which provides you the ability to cross-reference your contact list with the list you have in Qualtics' system. This is any alphanumeric ID, and should be unique per individual \n\nContacts can also include an arbitrary (defined by you) data object in the `embeddedData field`. You can use this to add information about your contact to customize the user experience per contact.\n\n<!--\ntitle: Create Contact\nlineNumbers: true\n-->\n```shell\ncurl --location --request POST 'st3.qualtrics.com/API/v3/directories/POOL_012345678901234/contacts' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer 194da047-9099-4893-8edb-e52bca0e60d6' \\\n--data-raw '{\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"email\": \"JaneDoe@email.com\",\n    \"phone\": \"111-111-1111\",\n    \"extRef\": \"my_Internal_ID_12345\",\n    \"embeddedData\": { \"level\": \"mid\", \"area\": \"coast\" },\n    \"language\": \"\",\n    \"unsubscribed\": false\n}'\n```\n\nA successful call will receive a response like the one below, which provides you the contact ID of the newly created contact: \n\n```json\n{\n  \"result\": {\n    \"id\": \"CID_012345678901234\"\n  },\n  \"meta\": {\n    \"httpStatus\": \"200 - OK\",\n    \"requestId\": \"900df19-75fd-479d-b4c2-6fd1f4b7b3e0\"\n  }\n}\n```\n\n\n\n## List Contacts\n\nOnce you've created one or more contacts in your directory, you can list those contactsw using the List Contacts API. This API lists the current contents of the XM Directory directory. \n\nYour contact lists can grow large, and will likely require you to paginate through the data. Ther are two ways to do this. \n1) Use the `pageSize` and `offset` parameters, or\n2) Repeatedly call this API using the `nextPage` value until `nextPage` is **null**\n\nTo use the `pagesize` and `offset` parameters, make calls like the one below, and increment the offset with each call: \n\n<!--\ntitle: List using pagesize and offset\nlineNumbers: true\n-->\n```shell\ncurl --location --request GET 'st3.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts?pageSize=2&offset=3' \\\n--header 'Authorization: Bearer 4713af3c-a39d-4c54-adbf-863b4e8ac685'\n```\n\nIf you want to use the `nextPage` value, make the first call then grab the `nextPage`\n\n<!--\ntitle: List using pagesize and offset\nlineNumbers: true\n-->\n```shell\ncurl --location --request GET 'st3.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts?pageSize=2' \\\n--header 'Authorization: Bearer 4713af3c-a39d-4c54-adbf-863b4e8ac685'\n```\n\nThis will return a result that looks like this: \n\n<!--\ntitle: List result\nlineNumbers: true\n-->\n```json\n{\n    \"result\": {\n        \"elements\": [\n            {\n                \"contactId\": \"CID_018xUkJgOCcpy6x\",\n                \"firstName\": \"First123w3\",\n                \"lastName\": \"Last123r3\",\n                \"email\": \"firstLast@example.com\",\n                \"phone\": \"\",\n                \"extRef\": \"Example\",\n                \"language\": \"\",\n                \"unsubscribed\": true\n            },\n            {\n                \"contactId\": \"CID_01bVky8E0pU4Nwh\",\n                \"firstName\": \"First123w149\",\n                \"lastName\": \"Last123r149\",\n                \"email\": \"firstlast+149@example.com\",\n                \"phone\": \"\",\n                \"extRef\": \"Example\",\n                \"language\": \"\",\n                \"unsubscribed\": true\n            }\n        ],\n        \"nextPage\": \"https://g1-iad.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts?pageSize=2&skipToken=CID_01bVky8E0pU4Nwh\"\n    },\n    \"meta\": {\n        \"httpStatus\": \"200 - OK\",\n        \"requestId\": \"4cb5780c-783c-4358-8184-6f944ee42200\"\n    }\n}\n```\n\nWhen you get that result, read in the `nextPage` field from the result, and feed it into your next call (including authentication) like so:\n\n<!--\ntitle: List using pagesize and offset\nlineNumbers: true\n-->\n```shell\ncurl --location --request GET 'https://g1-iad.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts?pageSize=2&skipToken=CID_01bVky8E0pU4Nwh' \\\n--header 'Authorization: Bearer 4713af3c-a39d-4c54-adbf-863b4e8ac685'\n```\n\nContinue calling the 'nextPage' URL until the `nextPage` field returns `null`, indicating the end fo the list. \n\n\n<!-- theme: info -->\n>### Embedded Data\n>The List Contacts API does not return the embedded data for each contact. You need to call [Get Contact](../../../reference/contacts.json/paths/~1directories~1{directoryId}~1contacts~1{contactId}/get) on each contact for which you wish to obtain their embedded data.\n\n## Get Contact\n\nThe Get Contact API returns extensive information about a contact. The information includes metadata about the contact (such as first name), embedded data, and statistics about the contact's survey responses and email interactions. \n\n<!--\ntitle: cURL\nlineNumbers: true\n-->\n```shell\ncurl --location --request GET 'st3.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts/CID_0HTHRaqN6r36dZX' \\\n--header 'Authorization: Bearer cb5e8940-be5f-46e9-992b-bd2d4d33197d'\n```\n\n\n\n\n\n<!--\ntitle: json Response\nlineNumbers: true\n-->\n```json\n{\n    \"result\": {\n        \"contactId\": \"CID_0HTHRaqN6r36dZX\",\n        \"creationDate\": 1576438392000,\n        \"lastModified\": 1576438392000,\n        \"firstName\": \"John\",\n        \"lastName\": \"Smith\",\n        \"email\": \"person@example.com\",\n        \"emailDomain\": \"example.com\",\n        \"phone\": \"\",\n        \"language\": \"\",\n        \"writeBlanks\": false,\n        \"extRef\": \"Example\",\n        \"embeddedData\": {},\n        \"transactionData\": [],\n        \"stats\": {\n            \"AvgTimeToRespond\": null,\n            \"DataIntegrity\": \"100\",\n            \"EmailCount\": \"0\",\n            \"InviteCount\": \"0\",\n            \"LastEmailDate\": null,\n            \"LastInviteDate\": null,\n            \"LastResponseDate\": null,\n            \"MonthEmailCount\": \"0\",\n            \"MonthInviteCount\": \"0\",\n            \"Points\": \"0\",\n            \"ResponseCount\": \"0\",\n            \"ResponseRate\": \"0.0\"\n        },\n        \"skipped\": null,\n        \"directoryUnsubscribed\": true,\n        \"directoryUnsubscribeDate\": 1576438392000,\n        \"mailingListMembership\": {\n            \"CG_er1pwJbK9BZuxo1\": {\n                \"contactLookupId\": \"CGC_0Sq6nDxkHoY025n\",\n                \"name\": \"My Contact List\",\n                \"unsubscribed\": true,\n                \"unsubscribeDate\": 1576438393000,\n                \"ownerId\": \"UR_cVcNH0elQesua8J\"\n            }\n        }\n    },\n    \"meta\": {\n        \"httpStatus\": \"200 - OK\",\n        \"requestId\": \"7a5f1ae3-ce51-405d-804d-e26315bc2553\"\n    }\n}\n```\n\n\n\n\n## Get Contact History\n\nThe Get Contact History API returns information about either the emails sent to a contact or the survey responses supplied by a contact. The `type` query parameter specifies the type of history to return. The following code example demonstrates how to return a contact's survey response history (`type` is set to `email`).\n\n\n<!--\ntitle: cURL\nlineNumbers: true\n-->\n```shell\ncurl --location --request GET 'st3.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts/CID_0HTHRaqN6r36dZX/history?type=email&offset=0&pageSize=100' \\\n--header 'Authorization: Bearer 7fcb1a22-5618-4466-a933-097293505f03'\n```\n\nThe returned objects contain extensive histories of the contact's interactions with the Qualtrics system. For detailed information on the what details the returned objects contain, see [Get Contact History](contacts.json/paths/~1directories~1{directoryId}~1contacts~1{contactId}~1history)\n\nThe following response object shows the contact's email history (with type set to **email**):\n\n\n<!--\ntitle: json Response (email)\nlineNumbers: true\n-->\n```json\n{\n              \"elements\": [\n                {\n                  \"distributionId\": \"EMD_1234567890abcde\",\n                  \"date\": \"2015-04-09 19:42:29\",\n                  \"type\": \"Invite\",\n                  \"result\": \"Success\",\n                  \"surveyId\": \"SV_1234567890abcde\",\n                  \"read\": true\n                },\n                {\n                  \"distributionId\": \"EMD_1234567890abcdf\",\n                  \"date\": \"2015-04-09 19:42:29\",\n                  \"type\": \"Invite\",\n                  \"result\": \"Bounce\",\n                  \"bounceInfo\": {\n                    \"type\": \"Hard\"\n                  },\n                  \"surveyId\": \"SV_1234567890abcde\",\n                  \"read\": false\n                }\n              ],\n              \"nextPage\": null\n            },\n            \"meta\": {\n              \"httpStatus\": \"200 - OK\"\n            }\n          }\n```\n\nThe following response object shows the contact's response history (when type is set to **response**):\n\n<!--\ntitle: json Response (response)\nlineNumbers: true\n-->\n```json\n{\n    \"meta\": {\n        \"httpStatus\": \"200 - OK\",\n        \"requestId\": \"607a5061-6ba7-4014-875d-7da1315c61a2\"\n    },\n    \"result\": {\n        \"elements\": [\n            {\n                \"distributionId\": \"EMD_5vdjLiUJT1JATop\",\n                \"responseId\": \"R_qFxoeiLscvMneff\",\n                \"surveyCompletedDate\": \"2017-08-08 14:58:57\",\n                \"surveyFinished\": true,\n                \"surveyId\": \"SV_cBjbWZ2uyPIQVLf\",\n                \"surveyStartedDate\": \"2017-08-08 14:58:53\"\n            },\n            {\n                \"distributionId\": \"EMD_9odFkKG1Cdflln7\",\n                \"responseId\": \"R_2wvOxMidyyh7ZKb\",\n                \"surveyCompletedDate\": \"2017-08-17 20:52:29\",\n                \"surveyFinished\": true,\n                \"surveyId\": \"SV_8pivLTQNqPohG5v\",\n                \"surveyStartedDate\": \"2017-08-17 20:52:18\"\n            },\n            {\n                \"distributionId\": \"EMD_eanPyQa5ondBhkN\",\n                \"responseId\": \"R_rfjAlFwK65ZsNYR\",\n                \"surveyCompletedDate\": \"2017-08-17 22:32:27\",\n                \"surveyFinished\": true,\n                \"surveyId\": \"SV_6hZDPZroTErKGZD\",\n                \"surveyStartedDate\": \"2017-08-17 22:32:16\"\n            },\n            {\n                \"distributionId\": \"EMD_eXog2zBKVo9Fpnn\",\n                \"responseId\": \"R_b8vRD49BdnI4Pct\",\n                \"surveyCompletedDate\": \"2017-09-04 19:36:57\",\n                \"surveyFinished\": true,\n                \"surveyId\": \"SV_9ukvzzzAdLsjLq5\",\n                \"surveyStartedDate\": \"2017-09-04 19:36:43\"\n            },\n            {\n                \"distributionId\": null,\n                \"responseId\": \"R_1eM2NjAkNoH08mx\",\n                \"surveyCompletedDate\": \"2017-09-04 19:55:47\",\n                \"surveyFinished\": true,\n                \"surveyId\": \"SV_9ukvzzzAdLsjLq5\",\n                \"surveyStartedDate\": \"2017-09-04 19:55:48\"\n            }\n        ],\n        \"nextPage\": null\n    }\n}\n\n```\n\n## Update Contact\n\nThe Update Contact API allows you to change existing metadata for a contact. You can also add or update a contact's embedded data. \n\nThe example below shows how to update a contact's information to include an external reference and add embedded data. Note the request only includes the fields needing updates, the other fields will retain previous values. \n\n\n<!--\ntitle: cURL\nlineNumbers: true\n-->\n```shell\ncurl --location --request PUT 'st3.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts/CID_0HTHRaqN6r36dZX' \\\n--header 'Content-Type: application/json' \\\n--header 'Authorization: Bearer 7fcb1a22-5618-4466-a933-097293505f03' \\\n--data-raw '{\n    \"extRef\": \"my_Internal_ID_12345\",\n    \"embeddedData\": { \"myField1\": \"data from my system\", \"myField2\": \"more data from my system\"}\n}'\n```\n\nThis will receive a response like: \n\n```json\n{\n  \"meta\": {\n    \"httpStatus\": \"200 - OK\",\n    \"requestId\": \"900df19-75fd-479d-b4c2-6fd1f4b7b3e0\"\n  }\n}\n```\n\nOnce your update is complete, if you call [Get Contact](contacts.json/paths/~1directories~1{directoryId}~1contacts), you will see the result of your update, as below:\n\n```json\n{\n    \"result\": {\n        \"contactId\": \"CID_0HTHRaqN6r36dZX\",\n        \"creationDate\": 1576438392000,\n        \"lastModified\": 1614115197000,\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Doe\",\n        \"email\": \"janedoe@example.com\",\n        \"emailDomain\": \"example.com\",\n        \"phone\": \"\",\n        \"language\": \"\",\n        \"writeBlanks\": false,\n        \"extRef\": \"my_Internal_ID_12345\",\n        \"embeddedData\": {\n            \"myField1\": \"data from my system\",\n            \"myField2\": \"more data from my system\"\n        },\n        \"transactionData\": [],\n        \"stats\": {\n            \"AvgTimeToRespond\": null,\n            \"DataIntegrity\": \"100\",\n            \"EmailCount\": \"0\",\n            \"InviteCount\": \"0\",\n            \"LastEmailDate\": null,\n            \"LastInviteDate\": null,\n            \"LastResponseDate\": null,\n            \"MonthEmailCount\": \"0\",\n            \"MonthInviteCount\": \"0\",\n            \"Points\": \"0\",\n            \"ResponseCount\": \"0\",\n            \"ResponseRate\": \"0.0\"\n        },\n        \"skipped\": null,\n        \"directoryUnsubscribed\": true,\n        \"directoryUnsubscribeDate\": 1576438392000,\n        \"mailingListMembership\": {\n            \"CG_er1pwJbK9BZuxo1\": {\n                \"contactLookupId\": \"CGC_0Sq6nDxkHoY025n\",\n                \"name\": \"Test Contact List\",\n                \"unsubscribed\": true,\n                \"unsubscribeDate\": 1576438393000,\n                \"ownerId\": \"UR_cVcNH0elQesua8J\"\n            }\n        }\n    },\n    \"meta\": {\n        \"httpStatus\": \"200 - OK\",\n        \"requestId\": \"bebc23ea-8a03-4b67-9f5e-87a0c52a3f07\"\n    }\n}\n```\n\n## Delete Contact\n\nThe Delete Contact API allows you to permanently delete a contact from the organization's directory. The example below shows how to use this API:\n\n\n<!--\ntitle: cURL\nlineNumbers: true\n-->\n```shell\ncurl --location --request DELETE 'st3.qualtrics.com/API/v3/directories/POOL_eOHAGsIto4GlLh3/contacts/CID_0HTHRaqN6r36dZX' \\\n--header 'Authorization: Bearer 7fcb1a22-5618-4466-a933-097293505f03'\n```\n\n\nA successful delete results in a 200 status code. An example response is shown below:\n\n\n<!--\ntitle: json Response\nlineNumbers: true\n-->\n```json\n{\n    \"meta\": {\n        \"httpStatus\": \"200 - OK\",\n        \"requestId\": \"1702483a-ced4-40a5-9ade-20e01475055b\"\n    }\n}\n\n```\n\n\n>© 2020 Qualtrics, LLC",
+    "contact": {
+      "name": "Support",
+      "url": "https://www.qualtrics.com/support/"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "3.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://ca1.qualtrics.com/API/v3",
+      "description": "Canadian Data Center"
+    },
+    {
+      "url": "https://iad1.qualtrics.com/API/v3",
+      "description": "Washington, DC Area Data Center (previously CO1)"
+    },
+    {
+      "url": "https://sjc1.qualtrics.com/API/v3",
+      "description": "San Jose, California Data Center (previously AZ)"
+    },
+    {
+      "url": "https://fra1.qualtrics.com/API/v3",
+      "description": "European Union Datacenter (previously EU2 or EU)"
+    },
+    {
+      "url": "https://syd1.qualtrics.com/API/v3",
+      "description": "Sydney, Australia Data Center (previously AU1)"
+    },
+    {
+      "url": "https://gov1.qualtrics.com/API/v3",
+      "description": "US Government Data Center"
+    }
+  ],
+  "security": [
+    {
+      "api_token": []
+    },
+    {
+      "public_oauth2": []
+    }
+  ],
+  "paths": {
+    "/directories/{directoryId}/contacts": {
+      "get": {
+        "summary": "List Directory Contacts",
+        "description": "Retrieve the contacts in a directory.\n<!--From Readme-->\nFor the last page of results, the value associated with _nextPage_ will be **null**.\n\n<!-- theme: info -->\n>### This API call is only available to XM Directory users.\n>\n\nThe new string-based pagination functionality results in improved performance and a lower rate of timeouts. To opt in, append query parameter `useNewPaginationScheme=true`.\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "read:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "listDirectoryContacts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/skipToken"
+          },
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A collection of contacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDirectoryContactsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts",
+          "Legacy"
+        ]
+      },
+      "post": {
+        "summary": "Create Directory Contact",
+        "description": "Create a single contact in a specified directory.\n<!--From Readme-->\n<!-- theme: info -->\n\n>### This API call is only available to XM Directory users.\n>\n\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "write:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "createDirectoryContact",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirectoryContactRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Create Directory Contact Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDirectoryContactResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid arguments response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts",
+          "Legacy"
+        ]
+      }
+    },
+    "/directories/{directoryId}/contacts/{contactId}": {
+      "get": {
+        "summary": "Get Directory Contact",
+        "description": "Retrieve a single contact from a directory.\n<!--From Readme-->\n<!-- theme: info -->\n>### This API call is only available to XM Directory users.\n>\n\n\n\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "read:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "getDirectoryContact",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/contactId"
+          },
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A directory contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDirectoryContactResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts",
+          "Legacy"
+        ]
+      },
+      "put": {
+        "summary": "Update Directory Contact",
+        "description": "Update a single contact in a specified directory.\n<!--From Readme-->\n<!-- theme: info -->\n\n>### This API call is only available to XM Directory users.\n>\n\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "write:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "updateDirectoryContact",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/contactId"
+          },
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirectoryContactRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Update Directory Contact Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateDirectoryContactResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts",
+          "Legacy"
+        ]
+      },
+      "delete": {
+        "summary": "Delete Directory Contact",
+        "description": "Delete a single contact from a directory.\n<!--From Readme-->\n<!-- theme: info -->\n\n>### This API call is only available to XM Directory users.\n>\n\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "write:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "deleteDirectoryContact",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/contactId"
+          },
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Delete Directory Contact Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateDirectoryContactResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts",
+          "Legacy"
+        ]
+      }
+    },
+    "/directories/{directoryId}/contacts/search": {
+      "post": {
+        "summary": "Search Directory Contacts",
+        "description": "Retrieve contacts that satisfy conditions you have specified.\n<!--From Readme-->\nYou can get the _next page_ of contacts for the **filter** object by adding the skipToken value returned in the last request to your query params.\n\nIf the pageSize is set to 10 and all of the 10 contacts in the previous response were the only contacts that satisfied the specified **filter**, then the subsequent response when the API call is made with skipToken in previous response will return zero contacts.\n\nIf at any time the number of contacts in the response is less than the **pageSize**, then no skipToken will be included in the response.\n\n<!-- theme: warning -->\n> ### Search Depth Limitation\n> Paginating beyond the first 10,000 contacts will result in a `400` error response.\n\nBelow is a pagination sequence example.\n\n<!--\ntitle: curl Request: Contacts 1-5\nlineNumbers: true\n-->\n```shell\ncurl 'https://yourdatacenterid.qualtrics.com/API/v3/directories/POOL_DBCF6F11V71CiZx/contacts/search?pageSize=5' \\\\\n-X 'POST' \\\\\n-H 'X-API-TOKEN: yourtokenhere' \\\\\n-H 'Content-Type: application/json' \\\\\n-d '\n     {\n       \"filter\": {\n         \"comparison\": \"eq\",\n         \"filterType\": \"lastName\",\n         \"value\": \"test\"\n       }\n     }\n   '\n```\n\n    \n<!--\ntitle: curl Request: Contacts 6-10\nlineNumbers: true\n-->\n```shell\ncurl 'https://yourdatacenterid.qualtrics.com/API/v3/directories/POOL_DBCF6F11V71CiZx/contacts/search?pageSize=5&skipToken=NQ==' \\\\\n-X 'POST' \\\\\n-H 'X-API-TOKEN: yourtokenhere' \\\\\n-H 'Content-Type: application/json' \\\\\n-d '\n     {\n       \"filter\": {\n         \"comparison\": \"eq\",\n         \"filterType\": \"lastName\",\n         \"value\": \"test\"\n       }\n     }\n   '\n```\n\n    \n<!--\ntitle: curl Request: Contacts 11-15\nlineNumbers: true\n-->\n```shell\ncurl 'https://yourdatacenterid.qualtrics.com/API/v3/directories/POOL_DBCF6F11V71CiZx/contacts/search?pageSize=5&skipToken=MTA=' \\\\\n-X 'POST' \\\\\n-H 'X-API-TOKEN: yourtokenhere' \\\\\n-H 'Content-Type: application/json' \\\\\n-d '\n     {\n       \"filter\": {\n         \"comparison\": \"eq\",\n         \"filterType\": \"lastName\",\n         \"value\": \"test\"\n       }\n     }\n   '\n```\n\n\n\n\n\n<!--\ntitle: json Response: Contacts 1-5\nlineNumbers: true\n-->\n```json\n{\n  \"result\": {\n    \"elements\": [\n      {\n        \"id\": \"CID_XXXXXXXXXXXX001\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX002\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX003\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX004\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX005\",\n        ...\n      },\n    ],\n    \"skipToken\": \"NQ==\"\n  },\n  \"meta\": {\n    \"httpStatus\": \"200 - OK\",\n    \"requestId\": \"ae8f9d62-217b-4f98-89f8-94fb2b43dcc7\"\n  }\n}\n```\n\n    \n<!--\ntitle: json Response: Contacts 6-10\nlineNumbers: true\n-->\n```json\n{\n  \"result\": {\n    \"elements\": [\n      {\n        \"id\": \"CID_XXXXXXXXXXXX006\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX007\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX008\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX009\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX010\",\n        ...\n      },\n    ],\n    \"skipToken\": \"MTA=\"\n  },\n  \"meta\": {\n    \"httpStatus\": \"200 - OK\",\n    \"requestId\": \"0dd60d0d-4d43-4937-b278-b0b085c6cbca\"\n  }\n}\n```\n\n    \n<!--\ntitle: json Response: Contacts 11-15\nlineNumbers: true\n-->\n```json\n{\n  \"result\": {\n    \"elements\": [\n      {\n        \"id\": \"CID_XXXXXXXXXXXX011\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX012\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX013\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX014\",\n        ...\n      },\n      {\n        \"id\": \"CID_XXXXXXXXXXXX015\",\n        ...\n      },\n    ],\n  },\n  \"meta\": {\n    \"httpStatus\": \"200 - OK\",\n    \"requestId\": \"1bd55949-0aa4-4533-9c8e-fc897b90c237\"\n  }\n}\n```\n\n\n\n\n## Filter Criterion\n\nBelow are the supported filter criteria and their associated JSON syntax.\n\n|Criterion|JSON Syntax|Filter|\n|---|---|---|---|\n|email|`{\"filterType\": \"email\",\"comparison\": stringComparison,\"value\": plainString}`|filter: `{\"filterType\": \"email\",\"comparison\": \"eq\",\"value\": \"pritty\"}`|\n|first name|`{\"filterType\": \"firstName\",\"comparison\": stringComparison,\"value\": plainString}`|filter: `{\"filterType\": \"firstName\",\"comparison\": \"eq\",\"value\": \"Iain\"}`|\n|last name|`{\"filterType\": \"lastName\",\"comparison\": stringComparison,\"value\": plainString}`|filter: `{\"filterType\": \"lastName\",\"comparison\": \"neq\",\"value\": \"reezy\"}`|\n|language|`{\"filterType\": \"language\",\"comparison\": stringComparison,\"value\": plainString}`|filter: `{\"filterType\": \"language\",\"comparison\": \"neq\",\"value\": \"en\"}`|\n|phone|`{\"filterType\": \"phone\",\"comparison\": stringComparison,\"value\": plainString}`|filter: `{\"filterType\": \"phone\",\"comparison\": \"neq\",\"value\": \"9193367852\"}`|\n|external data reference|`{\"filterType\": \"extRef\",\"comparison\": stringComparison,\"value\": plainString}`|filter: `{\"filterType\": \"extRef\",\"comparison\": \"eq\",\"value\": \"beryl\"}`|\n|created|`{\"filterType\": \"created\",\"comparison\": numericComparison,\"value\": dateOrUTCDateTime}`|filter: `{\"filterType\": \"created\",\"comparison\": \"eq\",\"value\": \"2017-03-01 23:18:12\"}`|\n|||filter: `{\"filterType\": \"created\",\"comparison\": \"neq\",\"value\": \"2017-03-08\"}`|\n|last modified date|`{\"filterType\": \"lastModified\",\"comparison\": numericComparison,\"value\": dateOrUTCDateTime}`|filter: `{\"filterType\": \"lastModified\",\"comparison\": \"gt\",\"value\": \"2013-10-31 23:48:59\"}`|\n|in list|`{\"filterType\": \"inList\",\"comparison\": booleanComparison,\"mailingListId\": mailingListId}`|filter: `{\"filterType\": \"inList\",\"comparison\": true,\"mailingListId\": \"CG_abcd1234\"}`|\n|info field state|`{\"filterType\": \"infoFieldState\",\"field\": oneOf(\"email\", \"extRef\", \"firstName\", \"lastName\"), \"comparison\": oneOf(\"empty\", \"notEmpty\")}`|filter: `{\"filterType\": \"infoFieldState\",\"field\": \"lastName\", \"comparison\": \"notEmpty\"}`|\n\n\n\n<!-- theme: warning -->\n>### Leading and trailing spaces\n>String values associated with JSON keys that are not **filterType** or **comparison** will have any leading and trailing spaces trimmed off.\n>\n>The JSON keys **filterType** and **comparison** have strict values enumerated herein. Any deviation from those values will result in an error being returned in the API response.\n\n\n\n## Filter Conjunction\n\nThe filter conjunction allows one to combine multiple criteria to retrieve contacts from the directory with precision.\n\nField 'conjunction' = 'and' need to be added as an attribute inside 'filter' to indicate multiple filters need to be combined. The number of filters should be ranged from 2 to 5. If more than 5 filters are combined, an error will be thrown.\n\n\n|JSON Syntax|Filter|\n|---|---|\n|`{\"conjunction\": \"and\",\"filters\": [filters]}`|\"filter\": `{\"conjunction\": \"and\",\"filters\": [{\"comparison\": \"eq\",\"filterType\": \"lastName\",\"value\": \"test\"},{\"comparison\": \"gte\",\"filterType\": \"created\",\"value\":\"2018-08-29\"}]}`|\n\n\n\n\n## numericComparison\n\n**JSON data type**: string\n\n**Valid values are**:\n- eq\n- neq\n- gt\n- lt\n- gte\n- lte\n\nValue represents a **date** must match the format **yyyy-MM-dd** or **yyyy-MM-dd hh:mm:ss**\n\n## stringComparison\n\n**JSON data type**: string\n**Valid values are**:\n- eq\n- neq\n\nString comparison is **not case sensitive** for the values it is inspecting. *sEArcH* is equivalent to *search*, *SEARCH*, *SeaRCh* and so on...\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "read:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "searchDirectoryContacts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/skipToken"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchDirectoryContactRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A collection of contacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchDirectoryContactResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts",
+          "Legacy"
+        ]
+      }
+    },
+    "/directories/{directoryId}/contacts/{contactId}/history": {
+      "get": {
+        "summary": "Get Directory Contact History",
+        "description": "Retrieve the history for contacts in a directory.\n<!--From Readme-->\nFor the last page of results, the value associated with _nextPage_ will be **null**.\n<!-- theme: info -->\n>### This API call is only available to XM Directory users.\n>\n\n",
+        "security": [
+          {
+            "api_token": []
+          },
+          {
+            "public_oauth2": [
+              "read:directory_contacts"
+            ]
+          }
+        ],
+        "operationId": "getDirectoryContactHistory",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "The desired history type; one of two values: email and response",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "description": "The desired history type",
+              "title": "HistoryType",
+              "type": "string",
+              "default": "email",
+              "enum": [
+                "email",
+                "response"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/contactId"
+          },
+          {
+            "$ref": "#/components/parameters/directoryId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Get Directory Contact History response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDirectoryContactHistoryResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Directory Contacts History",
+          "Legacy"
+        ]
+      }
+    },
+    "/directories/{directoryId}/contacts/optedOutContacts": {
+      "get": {
+        "summary": "List Opted Out Directory Contacts",
+        "description": "Retrieve the contacts in a directory who have opted out.\n<!--From Readme-->\nFor the last page of results, the value associated with _nextPage_ will be **null**.\n<!-- theme: info -->\n\n>### This API call is only available to XM Directory users.\n>\n\n",
+        "tags": [
+          "Directory Contacts"
+        ],
+        "operationId": "listDirectoryOptedOutContacts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/directoryId"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/since"
+          },
+          {
+            "$ref": "#/components/parameters/skipToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful List Directory Contacts Opted Out response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOfContacts"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "A default error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DefaultErrorResponse": {
+        "title": "Default error resposne",
+        "type": "object",
+        "required": [
+          "meta"
+        ],
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/MetaInError"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Meta": {
+        "title": "Meta",
+        "type": "object",
+        "required": [
+          "httpStatus",
+          "requestId"
+        ],
+        "properties": {
+          "httpStatus": {
+            "title": "http status",
+            "type": "string"
+          },
+          "requestId": {
+            "title": "An identifier of the incoming request.",
+            "type": "string"
+          },
+          "notice": {
+            "title": "An informational string about the request.",
+            "type": "string"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "MetaInError": {
+        "title": "Meta with Error",
+        "type": "object",
+        "required": [
+          "httpStatus",
+          "requestId",
+          "error"
+        ],
+        "properties": {
+          "httpStatus": {
+            "title": "http status",
+            "type": "string"
+          },
+          "requestId": {
+            "title": "An identifier of the incoming request.",
+            "type": "string"
+          },
+          "notice": {
+            "title": "An informational string about the request.",
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Error": {
+        "title": "Error",
+        "type": "object",
+        "required": [
+          "errorMessage",
+          "errorCode"
+        ],
+        "properties": {
+          "errorMessage": {
+            "title": "Detail error message.",
+            "type": "string"
+          },
+          "errorCode": {
+            "title": "Unique error code of a cause.",
+            "type": "string"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "ResponseId": {
+        "title": "ResponseId",
+        "type": "string",
+        "pattern": "^R_[0-9a-zA-Z]{11,15}$",
+        "example": "R_3gFikOSvsGiEA4J",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The contact's response ID. Indicates the contact's response to the survey."
+      },
+      "SurveyId": {
+        "title": "Surveyid",
+        "type": "string",
+        "pattern": "^SV_[0-9a-zA-Z]{11,15}$",
+        "example": "SV_cHbKMOdeT8NetF3",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The survey ID of the survey referenced by this distribution."
+      },
+      "DistributionId": {
+        "title": "DistributionId",
+        "type": "string",
+        "example": "EMD_1234567890abcde",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The distribution's ID, which can be used with Get Distribution to obtain more information about the distribution."
+      },
+      "Offset": {
+        "description": "The start position for pagination",
+        "title": "Offset",
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "default": 0,
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "SkipToken": {
+        "description": "The start position for pagination",
+        "title": "SkipToken",
+        "type": "string",
+        "default": "",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "PageSize": {
+        "type": "integer",
+        "description": "The maximum number of contacts to return per request. While this parameter will accept values greater than 100, the limit of the page size.",
+        "title": "PageSize",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 100,
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "DirectoryId": {
+        "description": "The directory ID, also known as a pool ID",
+        "default": "POOL_012345678901234",
+        "example": "POOL_012345678901234",
+        "title": "DirectoryId",
+        "type": "string",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "NextPage": {
+        "title": "NextPage",
+        "type": "string",
+        "nullable": true,
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "ContactId": {
+        "title": "ContactId",
+        "type": "string",
+        "example": "CID_012345678901234",
+        "default": "CID_012345678901234",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The contact ID."
+      },
+      "ContactLookupId": {
+        "title": "ContactLookupId",
+        "type": "string",
+        "example": "CGC_012345678901234",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The contact's unique ID in the mailing list."
+      },
+      "FirstName": {
+        "title": "FirstName",
+        "type": "string",
+        "nullable": true,
+        "default": "Jane",
+        "description": "The contact's first name or given name.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "LastName": {
+        "title": "LastName",
+        "type": "string",
+        "nullable": true,
+        "default": "Doe",
+        "description": "The contact's last name or surname.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Email": {
+        "title": "Email",
+        "type": "string",
+        "nullable": true,
+        "default": "JaneDoe@email.com",
+        "description": "The contact's email address.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Phone": {
+        "title": "Phone",
+        "type": "string",
+        "nullable": true,
+        "default": "111-111-1111",
+        "description": "The contact's phone number.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "ExtRef": {
+        "title": "ExtRef",
+        "type": "string",
+        "nullable": true,
+        "default": "my_Internal_ID_12345",
+        "description": "The External reference for the contact. You can place any string data here you need to identify the contact.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Language": {
+        "title": "Language",
+        "type": "string",
+        "nullable": true,
+        "default": "",
+        "description": "The contact's preferred language code, if set.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "DirectoryUnsubscribed": {
+        "title": "DirectoryUnsubscribed",
+        "type": "boolean",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "Indicates whether the user opted out of the directory."
+      },
+      "DirectoryUnsubscribeDate": {
+        "title": "DirectoryUnsubscribeDate",
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "Date and time the user opted out of the directory. Expressed in milliseconds since the Unix epoch, January 1, 1970 at 0:00 UTC."
+      },
+      "Unsubscribed": {
+        "title": "Unsubscribed",
+        "type": "boolean",
+        "description": "Whether the contact opted out of the mailing list.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "UnsubscribedDate": {
+        "title": "UnsubscribedDate",
+        "type": "string",
+        "nullable": true,
+        "format": "date-time",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The date the contact opted out of this mailing list. Is set to null if the user has not opted out."
+      },
+      "CreationDate": {
+        "title": "CreationDate",
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "Date and time this contact's record was created. Expressed in milliseconds since the Unix epoch, January 1, 1970 at 0:00 UTC."
+      },
+      "LastModified": {
+        "title": "LastModified",
+        "type": "integer",
+        "format": "int64",
+        "nullable": true,
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "Date and time this record was last modified. Expressed in milliseconds since the Unix epoch, January 1, 1970 at 0:00 UTC."
+      },
+      "EmailDomain": {
+        "title": "EmailDomain",
+        "type": "string",
+        "nullable": true,
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "The contact's email domain."
+      },
+      "WriteBlanks": {
+        "title": "WriteBlanks",
+        "type": "boolean",
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": "Whether to write blanks."
+      },
+      "EmbeddedData": {
+        "title": "EmbeddedData",
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "The embedded data object contains extra metadata that you want to associate with contacts. This user-defined data could include such data as birthplace, gender, employment status, etc.",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Stats": {
+        "title": "Stats",
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": {
+          "type": "string",
+          "nullable": true
+        },
+        "x-tags": [
+          "Schemas"
+        ],
+        "properties": {
+          "AvgTimeToRespond": {
+            "type": "string",
+            "description": "Average time, in hours, that passed before the contact started taking a survey after the invitation was sent.",
+            "example": "48"
+          },
+          "DataIntegrity": {
+            "type": "string",
+            "description": "The contact's data integrity score. 100 is the highest score.",
+            "example": "100"
+          },
+          "EmailCount": {
+            "type": "string",
+            "description": "Number of emails sent to this contact since the contact was created.",
+            "example": "10"
+          },
+          "InviteCount": {
+            "type": "string",
+            "description": "Number of invitations to take surveys that have been sent to this contact since the contact was created.",
+            "example": "5"
+          },
+          "LastEmailDate": {
+            "type": "string",
+            "description": "Last date and time an email was sent to this contact. Emails include invitations to take surveys, thank you notes for taking a survey, and reminders to take a survey. The date and time is in UTC formatted as yyyy-MM-dd HH:mm:ss."
+          },
+          "LastInviteDate": {
+            "type": "string",
+            "description": "Last date and time an invitation to take a survey has been sent to this contact. The date and time is in UTC formatted as yyyy-MM-dd HH:mm:ss"
+          },
+          "LastResponseDate": {
+            "type": "string",
+            "description": "Last date and time this contact completed a survey. The date and time is in UTC formatted as yyyy-MM-dd HH:mm:ss."
+          },
+          "MonthEmailCount": {
+            "type": "string",
+            "description": "The number of emails sent to this contact in the month that the API was called.",
+            "example": "3"
+          },
+          "MonthInviteCount": {
+            "type": "string",
+            "description": "The number of invitations to take surveys sent to this contact in the month that the API was called.",
+            "example": "1"
+          },
+          "Points": {
+            "type": "string",
+            "description": "The number of incentive points this contact has earned.",
+            "example": "15"
+          },
+          "ResponseCount": {
+            "type": "string",
+            "description": "Number of surveys in total that this contact completed since the contact was created.",
+            "example": "1"
+          },
+          "ResponseRate": {
+            "type": "string",
+            "description": "The ratio of surveys this contact completed compared to the total number of surveys sent. The number ranges from 0.0 to 1.0.",
+            "example": "0.95"
+          }
+        },
+        "description": "The stats object contains information about interactions with this contact."
+      },
+      "OwnerId": {
+        "description": "The ID of the user who owns the mailing list.",
+        "title": "OwnerId",
+        "type": "string",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Name": {
+        "description": "The name of the mailing list.",
+        "title": "Name",
+        "type": "string",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "Since": {
+        "description": "The date from which to begin searching",
+        "example": "2008-01-02T00:00:00",
+        "default": "2008-01-02T00:00:00",
+        "title": "Since",
+        "type": "string",
+        "format": "date-time",
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "SingleContact": {
+        "title": "SingleContact",
+        "type": "object",
+        "required": [
+          "contactId"
+        ],
+        "properties": {
+          "contactId": {
+            "$ref": "#/components/schemas/ContactId"
+          },
+          "firstName": {
+            "$ref": "#/components/schemas/FirstName"
+          },
+          "lastName": {
+            "$ref": "#/components/schemas/LastName"
+          },
+          "email": {
+            "$ref": "#/components/schemas/Email"
+          },
+          "phone": {
+            "$ref": "#/components/schemas/Phone"
+          },
+          "extRef": {
+            "$ref": "#/components/schemas/ExtRef"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "directoryUnsubscribed": {
+            "$ref": "#/components/schemas/DirectoryUnsubscribed"
+          },
+          "directoryUnsubscribeDate": {
+            "$ref": "#/components/schemas/DirectoryUnsubscribeDate"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "ListDirectoryContactsResponse": {
+        "title": "ListDirectoryContactsResponse",
+        "type": "object",
+        "required": [
+          "result",
+          "meta"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "required": [
+              "elements"
+            ],
+            "properties": {
+              "elements": {
+                "title": "Elements",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "contactId"
+                  ],
+                  "properties": {
+                    "contactId": {
+                      "$ref": "#/components/schemas/ContactId"
+                    },
+                    "firstName": {
+                      "$ref": "#/components/schemas/FirstName"
+                    },
+                    "lastName": {
+                      "$ref": "#/components/schemas/LastName"
+                    },
+                    "email": {
+                      "$ref": "#/components/schemas/Email"
+                    },
+                    "phone": {
+                      "$ref": "#/components/schemas/Phone"
+                    },
+                    "extRef": {
+                      "$ref": "#/components/schemas/ExtRef"
+                    },
+                    "language": {
+                      "$ref": "#/components/schemas/Language"
+                    },
+                    "unsubscribed": {
+                      "$ref": "#/components/schemas/Unsubscribed"
+                    }
+                  }
+                }
+              },
+              "nextPage": {
+                "$ref": "#/components/schemas/NextPage"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "result": {
+              "elements": [
+                {
+                  "contactId": "CID_012345678901234",
+                  "firstName": "exampleFirstName0",
+                  "lastName": "exampleLastName0",
+                  "email": "example0@example.com",
+                  "phone": "0000000000",
+                  "extRef": "reference.com",
+                  "language": "es",
+                  "unsubscribed": false
+                },
+                {
+                  "contactId": "CID_012345678901235",
+                  "firstName": "exampleFirstName1",
+                  "lastName": "exampleLastName1",
+                  "email": "example1@example.com",
+                  "extRef": "reference.com",
+                  "phone": null,
+                  "language": "de",
+                  "unsubscribed": true
+                }
+              ],
+              "nextPage": null
+            },
+            "meta": {
+              "httpStatus": "200 - OK"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "PageOfContacts": {
+        "title": "PageOfContacts",
+        "type": "object",
+        "required": [
+          "result",
+          "meta"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "required": [
+              "elements"
+            ],
+            "properties": {
+              "elements": {
+                "title": "Elements",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SingleContact"
+                }
+              },
+              "nextPage": {
+                "$ref": "#/components/schemas/NextPage"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "example": {
+          "result": {
+            "elements": [
+              {
+                "contactId": "CID_012345678901234",
+                "firstName": "exampleFirstName0",
+                "lastName": "exampleLastName0",
+                "email": "example0@example.com",
+                "phone": "0000000000",
+                "extRef": "reference.com",
+                "language": "es",
+                "directoryUnsubscribed": false,
+                "directoryUnsubscribeDate": null
+              },
+              {
+                "contactId": "CID_012345678901235",
+                "firstName": "exampleFirstName1",
+                "lastName": "exampleLastName1",
+                "email": "example1@example.com",
+                "extRef": "reference.com",
+                "phone": null,
+                "language": "de",
+                "directoryUnsubscribed": false,
+                "directoryUnsubscribeDate": null
+              }
+            ],
+            "nextPage": null
+          },
+          "meta": {
+            "httpStatus": "200 - OK"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "GetDirectoryContactResponse": {
+        "title": "GetDirectoryContactResponse",
+        "type": "object",
+        "x-examples": {
+          "example": {
+            "result": {
+              "contactId": "CID_012345678901234",
+              "creationDate": 1489515615000,
+              "lastModified": 1489599753000,
+              "firstName": "exampleFirst",
+              "lastName": "exampleLast",
+              "email": "example@example.com",
+              "emailDomain": null,
+              "phone": "0123456789",
+              "language": null,
+              "writeBlanks": false,
+              "extRef": null,
+              "embeddedData": {
+                "EDField": "EDValue"
+              },
+              "stats": {
+                "AvgTimeToRespond": null,
+                "DataIntegrity": "100",
+                "EmailCount": "0",
+                "InviteCount": "0",
+                "LastEmailDate": null,
+                "LastInviteDate": null,
+                "LastResponseDate": null,
+                "MonthEmailCount": "0",
+                "MonthInviteCount": "0",
+                "Points": "0",
+                "ResponseCount": "0",
+                "ResponseRate": "0.0"
+              },
+              "directoryUnsubscribed": false,
+              "directoryUnsubscribeDate": null,
+              "mailingListMembership": {
+                "CG_0123456789": {
+                  "contactLookupId": "CGC_012345678901234",
+                  "name": "example",
+                  "unsubscribed": false,
+                  "unsubscribedDate": null,
+                  "ownerId": "UR_012345678"
+                }
+              }
+            },
+            "meta": {
+              "httpStatus": "200 - OK",
+              "requestId": "900df19-75fd-479d-b4c2-6fd1f4b7b3e0"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "properties": {
+              "contactId": {
+                "$ref": "#/components/schemas/ContactId"
+              },
+              "creationDate": {
+                "$ref": "#/components/schemas/CreationDate"
+              },
+              "lastModified": {
+                "$ref": "#/components/schemas/LastModified"
+              },
+              "firstName": {
+                "$ref": "#/components/schemas/FirstName"
+              },
+              "lastName": {
+                "$ref": "#/components/schemas/LastName"
+              },
+              "email": {
+                "$ref": "#/components/schemas/Email"
+              },
+              "emailDomain": {
+                "$ref": "#/components/schemas/EmailDomain"
+              },
+              "phone": {
+                "$ref": "#/components/schemas/Phone"
+              },
+              "extRef": {
+                "$ref": "#/components/schemas/ExtRef"
+              },
+              "writeBlanks": {
+                "$ref": "#/components/schemas/WriteBlanks"
+              },
+              "embeddedData": {
+                "$ref": "#/components/schemas/EmbeddedData"
+              },
+              "language": {
+                "$ref": "#/components/schemas/Language"
+              },
+              "directoryUnsubscribed": {
+                "$ref": "#/components/schemas/DirectoryUnsubscribed"
+              },
+              "directoryUnsubscribeDate": {
+                "$ref": "#/components/schemas/DirectoryUnsubscribeDate"
+              },
+              "stats": {
+                "$ref": "#/components/schemas/Stats"
+              },
+              "mailingListMembership": {
+                "$ref": "#/components/schemas/MailingListMembership"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "result",
+          "meta"
+        ]
+      },
+      "UpdateDirectoryContactResponse": {
+        "title": "UpdateDirectoryContactResponse",
+        "type": "object",
+        "required": [
+          "meta"
+        ],
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "meta": {
+              "httpStatus": "200 - OK",
+              "requestId": "900df19-75fd-479d-b4c2-6fd1f4b7b3e0"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": ""
+      },
+      "DeleteDirectoryContactResponse": {
+        "title": "DeleteDirectoryContactResponse",
+        "type": "object",
+        "required": [
+          "meta"
+        ],
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "meta": {
+              "httpStatus": "200 - OK",
+              "requestId": "900df19-75fd-479d-b4c2-6fd1f4b7b3e0"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "GetDirectoryContactHistoryResponse": {
+        "title": "Get Directory Contact History Response",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/GetDirectoryContactEmailHistoryResponse"
+          },
+          {
+            "$ref": "#/components/schemas/GetDirectoryContactResponseHistoryResponse"
+          }
+        ],
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "GetDirectoryContactEmailHistoryResponse": {
+        "title": "GetDirectoryContactEmailHistoryResponse",
+        "type": "object",
+        "required": [
+          "result",
+          "meta"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "required": [
+              "elements"
+            ],
+            "properties": {
+              "elements": {
+                "title": "Elements",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmailHistory"
+                }
+              },
+              "nextPage": {
+                "$ref": "#/components/schemas/NextPage"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "result": {
+              "elements": [
+                {
+                  "distributionId": "EMD_1234567890abcde",
+                  "date": "2015-04-09 19:42:29",
+                  "type": "Invite",
+                  "result": "Success",
+                  "surveyId": "SV_1234567890abcde",
+                  "read": true
+                },
+                {
+                  "distributionId": "EMD_1234567890abcdf",
+                  "date": "2015-04-09 19:42:29",
+                  "type": "Invite",
+                  "result": "Bounce",
+                  "bounceInfo": {
+                    "type": "Hard"
+                  },
+                  "surveyId": "SV_1234567890abcde",
+                  "read": false
+                }
+              ],
+              "nextPage": null
+            },
+            "meta": {
+              "httpStatus": "200 - OK"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "EmailHistory": {
+        "title": "Email History",
+        "type": "object",
+        "x-tags": [
+          "Schemas"
+        ],
+        "properties": {
+          "distributionId": {
+            "$ref": "#/components/schemas/DistributionId"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC time of the distribution event in yyyy-MM-dd HH:mm:ss format."
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of email distribution. Either Invite, ThankYou, or Reminder."
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "Success",
+              "Bounce"
+            ],
+            "description": "Indicates whether the email was delivered (Success), bounced (Blocked)"
+          },
+          "bounceInfo": {
+            "type": "object",
+            "description": "An object that indicates the type of bounce as a string",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of bounce, e.g. \"Hard\""
+              }
+            }
+          },
+          "surveyId": {
+            "$ref": "#/components/schemas/SurveyId"
+          },
+          "read": {
+            "type": "boolean",
+            "description": "Indicates whether the distribution email has been read."
+          }
+        }
+      },
+      "GetDirectoryContactResponseHistoryResponse": {
+        "title": "Get Directory Contact Response History Response",
+        "type": "object",
+        "required": [
+          "result",
+          "meta"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "required": [
+              "elements"
+            ],
+            "properties": {
+              "elements": {
+                "title": "Elements",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ResponseHistory"
+                }
+              },
+              "nextPage": {
+                "$ref": "#/components/schemas/NextPage"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "result": {
+              "elements": [
+                {
+                  "responseId": "R_1234567890abcde",
+                  "surveyId": "SV_1234567890abcde",
+                  "dateStarted": "2015-04-09 13:42:51",
+                  "dateCompleted": "2015-04-09 13:45:51",
+                  "distributionId": "EMD_1234567890abcde",
+                  "finishedSurvey": true
+                },
+                {
+                  "responseId": "R_1234567890abcde",
+                  "surveyId": "SV_1234567890abcde",
+                  "dateStarted": "2015-04-09 13:42:51",
+                  "dateCompleted": "2015-04-09 13:45:51",
+                  "distributionId": "EMD_1234567890abcde",
+                  "finishedSurvey": true
+                }
+              ],
+              "nextPage": null
+            },
+            "meta": {
+              "httpStatus": "200 - OK"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "ResponseHistory": {
+        "title": "Response History",
+        "type": "object",
+        "x-tags": [
+          "Schemas"
+        ],
+        "properties": {
+          "responseId": {
+            "$ref": "#/components/schemas/ResponseId"
+          },
+          "distributionId": {
+            "$ref": "#/components/schemas/DistributionId"
+          },
+          "dateStarted": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time in UTC in the format yyyy-MM-dd HH:mm:ss that the contact started the survey."
+          },
+          "dateCompleted": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time in UTC in the format yyyy-MM-dd HH:mm:ss that the contact completed the survey."
+          },
+          "finishedSurvey": {
+            "type": "boolean",
+            "description": "Whether this contact finished the survey."
+          },
+          "surveyId": {
+            "$ref": "#/components/schemas/SurveyId"
+          }
+        }
+      },
+      "CreateDirectoryContactRequest": {
+        "title": "CreateDirectoryContactRequest",
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "$ref": "#/components/schemas/FirstName"
+          },
+          "lastName": {
+            "$ref": "#/components/schemas/LastName"
+          },
+          "email": {
+            "$ref": "#/components/schemas/Email"
+          },
+          "phone": {
+            "$ref": "#/components/schemas/Phone"
+          },
+          "extRef": {
+            "$ref": "#/components/schemas/ExtRef"
+          },
+          "embeddedData": {
+            "$ref": "#/components/schemas/EmbeddedData"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "unsubscribed": {
+            "$ref": "#/components/schemas/Unsubscribed"
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ],
+        "description": ""
+      },
+      "CreateDirectoryContactResponse": {
+        "title": "CreateDirectoryContactResponse",
+        "type": "object",
+        "required": [
+          "result",
+          "meta"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/ContactId"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "result": {
+              "id": "CID_012345678901234"
+            },
+            "meta": {
+              "httpStatus": "200 - OK",
+              "requestId": "900df19-75fd-479d-b4c2-6fd1f4b7b3e0"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "SearchDirectoryContactResponse": {
+        "title": "SearchDirectoryContactResponse",
+        "type": "object",
+        "required": [
+          "result",
+          "meta"
+        ],
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "object",
+            "required": [
+              "elements"
+            ],
+            "properties": {
+              "elements": {
+                "title": "Elements",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "#/components/schemas/ContactId"
+                    },
+                    "creationDate": {
+                      "$ref": "#/components/schemas/CreationDate"
+                    },
+                    "lastModified": {
+                      "$ref": "#/components/schemas/LastModified"
+                    },
+                    "firstName": {
+                      "$ref": "#/components/schemas/FirstName"
+                    },
+                    "lastName": {
+                      "$ref": "#/components/schemas/LastName"
+                    },
+                    "email": {
+                      "$ref": "#/components/schemas/Email"
+                    },
+                    "phone": {
+                      "$ref": "#/components/schemas/Phone"
+                    },
+                    "externalDataReference": {
+                      "$ref": "#/components/schemas/ExtRef"
+                    },
+                    "language": {
+                      "$ref": "#/components/schemas/Language"
+                    },
+                    "unsubscribed": {
+                      "$ref": "#/components/schemas/Unsubscribed"
+                    },
+                    "unsubscribedDate": {
+                      "$ref": "#/components/schemas/UnsubscribedDate"
+                    },
+                    "stats": {
+                      "$ref": "#/components/schemas/Stats"
+                    }
+                  }
+                }
+              },
+              "skipToken": {
+                "$ref": "#/components/schemas/SkipToken"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "x-examples": {
+          "example": {
+            "result": {
+              "elements": [
+                {
+                  "id": "CID_0uN5RodDbal7uFT",
+                  "firstName": "David",
+                  "lastName": "James",
+                  "email": "dj@qualtrics.com",
+                  "phoneNumber": "4251112222",
+                  "language": "en",
+                  "externalDataReference": "432dfassfndaf",
+                  "unsubscribed": false,
+                  "unsubscribeDate": "1970-01-01 00:00:00",
+                  "creationDate": "2018-09-13 21:26:51",
+                  "lastModified": "2018-09-13 21:26:51",
+                  "stats": {
+                    "AvgTimeToRespond": null,
+                    "DataIntegrity": "100",
+                    "EmailCount": "0",
+                    "InviteCount": "0",
+                    "LastEmailDate": null,
+                    "LastInviteDate": null,
+                    "LastResponseDate": null,
+                    "MonthEmailCount": "0",
+                    "MonthInviteCount": "0",
+                    "Points": "0",
+                    "ResponseCount": "0",
+                    "ResponseRate": "0.0"
+                  }
+                }
+              ],
+              "skipToken": null
+            },
+            "meta": {
+              "httpStatus": "200 - OK",
+              "requestId": "900df19-75fd-479d-b4c2-6fd1f4b7b3e0"
+            }
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "NumericFilter": {
+        "title": "NumericFilter",
+        "type": "object",
+        "properties": {
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "created",
+              "lastModified"
+            ]
+          },
+          "comparison": {
+            "type": "string",
+            "enum": [
+              "eq",
+              "neq",
+              "gt",
+              "lt",
+              "gte",
+              "lte"
+            ]
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "StringFilter": {
+        "title": "StringFilter",
+        "type": "object",
+        "properties": {
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "email",
+              "firstName",
+              "lastName",
+              "language",
+              "phone",
+              "extRef"
+            ]
+          },
+          "comparison": {
+            "type": "string",
+            "enum": [
+              "eq",
+              "neq"
+            ]
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "SearchDirectoryContactRequest": {
+        "title": "SearchDirectoryContactRequest",
+        "type": "object",
+        "x-examples": {
+          "example": {
+            "filter": {
+              "comparison": "eq",
+              "filterType": "firstName",
+              "value": "name"
+            }
+          }
+        },
+        "properties": {
+          "filter": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "conjunction": {
+                    "type": "string",
+                    "enum": [
+                      "and"
+                    ]
+                  },
+                  "filters": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 5,
+                    "description": "A JSON object that specifies basic filtering criteria. Refer to the documentation below to see how the value for this key is constructed.",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/StringFilter"
+                        },
+                        {
+                          "$ref": "#/components/schemas/NumericFilter"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "$ref": "#/components/schemas/StringFilter"
+              },
+              {
+                "$ref": "#/components/schemas/NumericFilter"
+              }
+            ]
+          }
+        },
+        "x-tags": [
+          "Schemas"
+        ]
+      },
+      "MailingListMembership": {
+        "title": "Mailing List Membership",
+        "type": "object",
+        "x-examples": {},
+        "description": "The mailingListMembership object contains information about the mailing lists this contact belongs to. The object contains one object for each mailing list, with the mailing list ID as the object name.",
+        "properties": {
+          "mailingListId": {
+            "$ref": "#/components/schemas/MailingListMembershipDetails"
+          }
+        }
+      },
+      "MailingListMembershipDetails": {
+        "title": "Mailing List Membership Details",
+        "type": "object",
+        "properties": {
+          "contactLookupId": {
+            "$ref": "#/components/schemas/ContactLookupId"
+          },
+          "name": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "unsubscribed": {
+            "$ref": "#/components/schemas/Unsubscribed"
+          },
+          "unsubscribedDate": {
+            "$ref": "#/components/schemas/UnsubscribedDate"
+          },
+          "ownerId": {
+            "$ref": "#/components/schemas/OwnerId"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "api_token": {
+        "type": "apiKey",
+        "description": "This is a schema for x-api-token header authentication.",
+        "name": "X-API-TOKEN",
+        "in": "header"
+      },
+      "public_oauth2": {
+        "type": "oauth2",
+        "description": "This is a schema for a public oauth2 api.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://${env}.qualtrics.com/oauth2/token",
+            "scopes": {
+              "read:directory_contacts": "Access contacts in your directories",
+              "write:directory_contacts": "Change or delete contacts in your directories, or create new contacts in your directories"
+            }
+          },
+          "authorizationCode": {
+            "tokenUrl": "https://${env}.qualtrics.com/oauth2/token",
+            "authorizationUrl": "https://${env}.qualtrics.com/oauth2/auth",
+            "scopes": {
+              "read:directory_contacts": "Access contacts in your directories",
+              "write:directory_contacts": "Change or delete contacts in your directories, or create new contacts in your directories"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "offset": {
+        "name": "offset",
+        "in": "query",
+        "description": "The start position for pagination",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/Offset"
+        }
+      },
+      "skipToken": {
+        "name": "skipToken",
+        "in": "query",
+        "description": "The start position for pagination",
+        "required": false,
+        "deprecated": false,
+        "schema": {
+          "$ref": "#/components/schemas/SkipToken"
+        }
+      },
+      "since": {
+        "name": "since",
+        "in": "query",
+        "description": "The date from which to begin searching",
+        "required": false,
+        "deprecated": false,
+        "schema": {
+          "$ref": "#/components/schemas/Since"
+        }
+      },
+      "pageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "description": "The maximum number of items to return per request",
+        "required": false,
+        "deprecated": false,
+        "schema": {
+          "$ref": "#/components/schemas/PageSize"
+        }
+      },
+      "directoryId": {
+        "name": "directoryId",
+        "in": "path",
+        "description": "The directory ID, also known as a pool ID",
+        "required": true,
+        "deprecated": false,
+        "schema": {
+          "$ref": "#/components/schemas/DirectoryId"
+        }
+      },
+      "contactId": {
+        "name": "contactId",
+        "in": "path",
+        "description": "The ID for the desired contact",
+        "required": true,
+        "deprecated": false,
+        "schema": {
+          "$ref": "#/components/schemas/ContactId"
+        }
+      }
+    }
+  }
+}
