@@ -137,7 +137,8 @@
           },
           {
             "public_oauth2": [
-              "write:directory_contacts"
+              "write:directory_contacts",
+              "read:directory_contacts"
             ]
           }
         ],
